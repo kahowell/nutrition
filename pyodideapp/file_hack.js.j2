@@ -1,0 +1,5 @@
+_file_hack = {
+{%- for file in files -%}
+    '{{ file.name }}': Uint8Array.from(atob('{{ file.contents }}'), c => c.charCodeAt(0)),
+{%- endfor -%}
+}
