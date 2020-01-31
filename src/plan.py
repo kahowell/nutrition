@@ -182,6 +182,14 @@ class PlansPage:
         plan_store.new_plan()
         store.push_page(PlanPage)
 
+    def remove_plan(self, plan):
+        def on_removed(*args):
+            meal_plans_store.load_plans()
+        def handle_response(response):
+            if response:
+                plans_db.remove(plan, on_removed)
+        self['$ons'].notification.confirm(f'Remove {plan.name}?').then(handle_response)
+
     def view_plan(self, plan_id):
         def on_loaded(error, plan):
             plan_store.state.plan = plan
@@ -202,6 +210,13 @@ class FoodsDisplay:
         plan_store.state.day_index = day_index
         plan_store.state.meal = meal
         store.push_page(ChooseRecipePage)
+
+    def remove_recipe(self, day_index, meal, food_index):
+        food = plan_store.state.plan.days[day_index][meal][food_index]
+        def handle_response(response):
+            if response:
+                plan_store.state.plan.days[day_index][meal].splice(food_index, 1)
+        self['$ons'].notification.confirm(f'Remove {food.name} from Day {day_index + 1} {meal}?').then(handle_response)
 
     def format_amount(self, amount):
         amount = amount or 0

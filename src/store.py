@@ -15,7 +15,6 @@ class NutritionAppStore(VueStore):
         self.state.message = 'Loading...'
         self.state.page_stack = []
         self.state.recipes = []
-        self.state.recipe = None
         self.state.has_no_recipes = False
         self.main_page = None
         window.onpopstate = self.onpopstate

@@ -11,19 +11,26 @@ from store import store, foods_db, recipes_db
 class RecipeEntryStore(VueStore):
     def __init__(self):
         super().__init__()
-        self.state.ingredients = []
+        self.state.recipe = None
 
     def add_ingredient(self, ingredient_id):
         def on_ingredient_load(error, ingredient):
-            self.state.ingredients.push({
+            self.state.recipe.ingredients.push({
                 'ingredient': ingredient,
                 'amount': None,
                 'portion': None,
             })
         foods_db.get(ingredient_id, on_ingredient_load)
 
-    def reset(self):
-        self.state.ingredients = []
+    def reset(self, recipe=None):
+        self.state.recipe = recipe or {
+            '_id': None,
+            'name': None,
+            'servings': None,
+            'ingredients': [],
+            'instructions': [],
+            'nutrients_per_serving': {},
+        }
 
 
 recipe_entry_store = RecipeEntryStore()
@@ -60,7 +67,7 @@ class RecipePage:
 
     def view_recipe(self, recipe_id):
         def on_load(error, result):
-            store.state.recipe = result
+            recipe_entry_store.state.recipe = result
             store.push_page(ViewRecipePage)
         recipes_db.get(recipe_id, on_load)
 
@@ -74,7 +81,11 @@ class ViewRecipePage:
 
     @property
     def recipe(self, *args):
-        return store.state.recipe
+        return recipe_entry_store.state.recipe
+
+    def edit_recipe(self, *args):
+        recipe_entry_store.reset(recipe_entry_store.state.recipe)
+        store.push_page(AddRecipePage)
 
 
 @vue_class
@@ -224,35 +235,32 @@ class AddRecipePage:
 
     def __init__(self):
         self.state = recipe_entry_store.state
-        self.name = None
-        self.servings = None
-        self.instructions = []
 
     @property
-    def ingredients(self, *args):
-        return recipe_entry_store.state.ingredients
+    def recipe(self, *args):
+        return self.state.recipe
 
     @property
     def save_disabled(self, *args):
-        if not self.name:
+        if not self.state.recipe.name:
             return True
         try:
-            float(self.servings)
+            float(self.state.recipe.servings)
         except (TypeError, ValueError):
             return True
-        for instruction in self.instructions:
+        for instruction in self.state.recipe.instructions:
             if not instruction:
                 return True
-        if len(recipe_entry_store.state.ingredients) == 0:
+        if len(self.state.recipe.ingredients) == 0:
             return True
-        for ingredient in recipe_entry_store.state.ingredients:
+        for ingredient in self.state.recipe.ingredients:
             try:
                 float(ingredient['amount'])
             except (TypeError, ValueError):
                 return True
             if not ingredient['portion']:
                 return True
-        for instruction in self.instructions:
+        for instruction in self.state.recipe.instructions:
             if not instruction['text']:
                 return True
         return False
@@ -261,20 +269,33 @@ class AddRecipePage:
     def open_ingredients(self, *args):
         store.push_page(AddIngredientPage)
 
+    def remove_ingredient(self, ingredient_index):
+        def handle_response(response):
+            if response:
+                recipe_entry_store.state.recipe.ingredients.splice(ingredient_index, 1)
+        ingredient = recipe_entry_store.state.recipe.ingredients[ingredient_index]
+        self['$ons'].notification.confirm(f'Remove {ingredient.ingredient.name}?').then(handle_response)
+
     def add_instruction(self, *args):
-        self.instructions.push({'text':''})
+        self.state.recipe.instructions.push({'text':''})
+
+    def remove_instruction(self, index):
+        def handle_response(response):
+            if response:
+                self.state.recipe.instructions.splice(index, 1)
+        self['$ons'].notification.confirm('Remove instruction line?').then(handle_response)
 
     def get_nutrition_facts(self, *args):
         console.log('calculating nutrition facts')
         all_nutrients = {}
-        for ingredient in self.state.ingredients:
+        for ingredient in self.state.recipe.ingredients:
             # calculate the number of grams this particular ingredient takes up
             amount = ingredient.amount or 0
             if ingredient.portion is None or ingredient.amount is None:
                 continue
             portion = ingredient.portion
             portion_record = list(filter(lambda portion_record: portion_record.modifier == portion, ingredient.ingredient.portions))[0]
-            servings_ratio = (1.0 / float(self.servings))
+            servings_ratio = (1.0 / float(self.state.recipe.servings))
             portion_ratio = (portion_record.weight_grams / 100.0) * float(amount)
             ratio = servings_ratio * portion_ratio
             for (nutrient, value) in ingredient.ingredient.nutrients_per_100g:
@@ -286,21 +307,12 @@ class AddRecipePage:
         return all_nutrients
 
     def save(self, *args):
-        def on_saved(*args):
+        def on_saved(result):
+            self.state.recipe._rev = result.rev
             store.load_recipes()
             store.pop_page()
-        recipes_db.put({
-            '_id': self.name.lower(),
-            'name': self.name,
-            'servings': float(Fraction(self.servings)),
-            'ingredients': self.format_ingredients(),
-            'instructions': [instruction.text for instruction in self.instructions],
-            'nutrients_per_serving': self.get_nutrition_facts(),
-        }).then(on_saved)
-
-    def format_ingredients(self):
-        return [{
-            'ingredient': ingredient.ingredient.name,
-            'amount': ingredient.amount,
-            'portion': ingredient.portion,
-        } for ingredient in self.ingredients]
+        self.state.recipe.nutrients_per_serving = self.get_nutrition_facts()
+        self.state.recipe._id = self.state.recipe._id or self.state.recipe.name.lower()
+        if type(self.state.recipe.servings) == 'str':
+            self.state.recipe.servings = float(self.state.recipe.servings)
+        recipes_db.put(self.state.recipe).then(on_saved)

@@ -192,18 +192,18 @@
                 <div class="content">
                     <v-ons-list>
                         <v-ons-list-item>
-                            <v-ons-input placeholder="Recipe Name" float v-model="name"/>
+                            <v-ons-input placeholder="Recipe Name" float v-model="recipe.name"/>
                         </v-ons-list-item>
                     </v-ons-list>
                     <v-ons-list>
                         <v-ons-list-item>
-                            <v-ons-input placeholder="Servings" float v-model="servings"/>
+                            <v-ons-input placeholder="Servings" float v-model="recipe.servings"/>
                         </v-ons-list-item>
                     </v-ons-list>
                     <br>
                     <v-ons-list>
                         <v-ons-list-header>Ingredients</v-ons-list-header>
-                        <v-ons-list-item v-for="ingredient in ingredients">
+                        <v-ons-list-item v-for="(ingredient, index) in recipe.ingredients">
                             <div class="center">
                                 <v-ons-row>
                                     <v-ons-col class="margin-right">
@@ -220,6 +220,7 @@
                                     </v-ons-col>
                                 </v-ons-row>
                             </div>
+                            <div class="right" @click.stop="remove_ingredient(index)"><v-ons-icon icon="md-delete"></v-ons-icon></div>
                         </v-ons-list-item>
                     </v-ons-list>
                     <v-ons-button v-on:click="open_ingredients">Add Ingredient</v-ons-button>
@@ -228,8 +229,11 @@
                     <v-ons-list class="instructions">
                         <v-ons-list-header>Instructions</v-ons-list-header>
                         <ol>
-                            <li v-for="instruction in instructions">
-                                <textarea class="textarea" placeholder="instruction" v-model="instruction.text">{{ instruction.text }}</textarea>
+                            <li v-for="(instruction, index) in recipe.instructions">
+                                <div style="display: flex">
+                                    <textarea class="textarea" placeholder="instruction" v-model="instruction.text">{{ instruction.text }}</textarea>
+                                    <div style="padding: 10px" @click.stop="remove_instruction(index)"><v-ons-icon icon="md-delete"></v-ons-icon></div>
+                                </div>
                             </li>
                         </ol>
                     </v-ons-list>
@@ -457,13 +461,16 @@
                         <p>Serves {{ recipe.servings }}</p>
                         <h2>Ingredients</h2>
                         <ul>
-                            <li v-for="ingredient in recipe.ingredients">{{ ingredient.ingredient }} - {{ ingredient.amount }} {{ ingredient.portion }}</li>
+                            <li v-for="ingredient in recipe.ingredients">{{ ingredient.ingredient.name }} - {{ ingredient.amount }} {{ ingredient.portion }}</li>
                         </ul>
                         <h2>Instructions</h2>
                         <ol>
-                            <li v-for="instruction in recipe.instructions">{{ instruction }}</li>
+                            <li v-for="instruction in recipe.instructions">{{ instruction.text }}</li>
                         </ol>
-                        <nutrition-facts :nutrients="recipe.nutrients_per_serving" :servings="recipe.servings"/>
+                        <nutrition-facts :nutrients="recipe.nutrients_per_serving" :servings="recipe.servings"></nutrition-facts>
+                        <br/>
+                        <br/>
+                        <v-ons-button @click="edit_recipe(recipe)">Edit Recipe</v-ons-button>
                     </div>
                 </div>
             </v-ons-page>
@@ -476,7 +483,8 @@
                     </p>
                     <v-ons-list>
                         <v-ons-list-item v-for="plan in plans" v-on:click="view_plan(plan._id)">
-                            {{ plan.name }}
+                            <div class="left">{{ plan.name }}</div>
+                            <div class="right" @click.stop="remove_plan(plan)"><v-ons-icon icon="md-delete"></v-ons-icon></div>
                         </v-ons-list-item>
                     </v-ons-list>
                     <div class="fab-margin"></div>
@@ -564,12 +572,13 @@
         <template id="foods">
             <div>
                 <v-ons-list-header>{{ title }}</v-ons-list-header>
-                <v-ons-list-item v-for="food in day[meal]">
+                <v-ons-list-item v-for="(food, food_index) in day[meal]">
                     <div class="left">
                         {{ food.name }}
                     </div>
                     <div class="right">
                         {{ format_amount(food.nutrients_per_serving.Energy) }} calories
+                        <div style="padding: 10px" @click.stop="remove_recipe(day_index, meal, food_index)"><v-ons-icon icon="md-delete"></v-ons-icon></div>
                     </div>
                 </v-ons-list-item>
                 <v-ons-list-item>
