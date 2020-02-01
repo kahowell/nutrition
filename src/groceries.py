@@ -32,6 +32,7 @@ class GroceryListStore(VueStore):
 
     def format_ingredient(self, ingredient):
         return {
+            '_id': datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f'),
             'name': f'{ingredient.ingredient.name} - {ingredient.amount} {ingredient.portion}',
             'checked': False,
         }

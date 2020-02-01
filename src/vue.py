@@ -72,7 +72,7 @@ class MappingProxy(MutableMapping):
         return proxy(self._value[key])
 
     def __setitem__(self, key, value):
-        console.log(self)
+        pass
 
     def __delitem__(self, key):
         del self._value[key]

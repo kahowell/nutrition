@@ -49,7 +49,6 @@ class MainPage:
                 'page': GroceriesPage,
             },
         ]
-        console.log(self.tabs)
         self.index = 0
 
     @property

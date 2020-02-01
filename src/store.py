@@ -39,7 +39,6 @@ class NutritionAppStore(VueStore):
             self.state.recipes = list(map(lambda row: row.doc, result.rows))
             if len(self.state.recipes) == 0:
                 self.state.has_no_recipes = True
-            console.log(self.state.recipes)
         recipes_db.allDocs({'include_docs': True}, on_loaded)
 
     def load_main_page(self):

@@ -84,7 +84,6 @@ class ChooseRecipePage:
     def add_recipe(self, recipe_id):
         def on_loaded(error, recipe):
             plan_store.state.plan.days[plan_store.state.day_index][plan_store.state.meal].push(recipe)
-            console.log(plan_store.state.plan.days)
             store.pop_page()
         recipes_db.get(recipe_id, on_loaded)
 
