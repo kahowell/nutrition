@@ -546,6 +546,26 @@
                     </p>
                     <v-ons-list>
                         <v-ons-list-item expandable>
+                            Recipes Required, Leftovers
+                            <div class="expandable-content">
+                                <v-ons-list>
+                                    <v-ons-list-item v-for="(recipe_info) in recipe_info_list">
+                                        <div class="left">
+                                            {{ recipe_info.recipe.name }}
+                                        </div>
+                                        <div class="center padding-left">
+                                            cooked {{ recipe_info.count }} time(s)
+                                        </div>
+                                        <div class="right">
+                                            w/ {{ recipe_info.leftover_servings }} servings leftover
+                                        </div>
+                                    </v-ons-list-item>
+                                </v-ons-list>
+                            </div>
+                        </v-ons-list-item>
+                    </v-ons-list>
+                    <v-ons-list>
+                        <v-ons-list-item expandable>
                             Average Daily Nutrition
                             <div class="expandable-content">
                                 <v-ons-list>
@@ -607,9 +627,68 @@
         <template id="groceries">
             <v-ons-page>
                 <div class="content">
-                    <p class="text">
-                        TODO groceries
+                    <p class="text" v-if="list.length == 0">
+                        Nothing added to the grocery list yet. Use the button below to add items to the grocery list.
                     </p>
+                    <v-ons-list>
+                        <v-ons-list-item v-for="(item, index) in list">
+                            <div class="left"><v-ons-switch v-model="item.checked" @change="save_item(item, $event)"></v-ons-switch></div>
+                            <div class="center">{{ item.name }}</div>
+                            <div class="right" @click.stop="remove_item(item)"><v-ons-icon icon="md-delete"></v-ons-icon></div>
+                        </v-ons-list-item>
+                    </v-ons-list>
+                    <div class="fab-margin"></div>
+                </div>
+                <v-ons-fab position="bottom right" v-on:click="add_items">
+                    <v-ons-icon icon="md-plus"/>
+                </v-ons-fab>
+            </v-ons-page>
+        </template>
+        <template id="add-grocery-items">
+            <v-ons-page class="choose-recipe">
+                <v-ons-toolbar>
+                    <div class="left">
+                        <v-ons-back-button>Groceries</v-ons-back-button>
+                    </div>
+                    <div class="center">Add Meals to Groceries</div>
+                </v-ons-toolbar>
+                <div class="content">
+                    <v-ons-list>
+                        <v-ons-list-header>Meal Plans</v-ons-list-header>
+                        <v-ons-list-item v-for="plan in plans" expandable>
+                            <div class="left"><v-ons-switch @click.stop @change="toggle_plan(plan, $event)" v-model="checked_plans" :value="plan.name"></v-ons-switch></div>
+                            <div class="center">{{ plan.name }}</div>
+                            <div class="expandable-content">
+                                <v-ons-list>
+                                    <v-ons-list-item v-for="(day, index) in plan.days" expandable>
+                                        <div class="left"><v-ons-switch @click.stop @change="toggle_day(plan, index, $event)" v-model="checked_days" :value="[plan.name, index]"></v-ons-switch></div>
+                                        <div class="center">Day {{ index + 1 }}</div>
+                                        <div class="expandable-content">
+                                            <v-ons-list>
+                                                <v-ons-list-item>
+                                                    <div class="left"><v-ons-switch v-model="checked_meals" :value="[plan.name, index, 'breakfast']"></v-ons-switch></div>
+                                                    <div class="center">Breakfast</div>
+                                                </v-ons-list-item>
+                                                <v-ons-list-item>
+                                                    <div class="left"><v-ons-switch v-model="checked_meals" :value="[plan.name, index, 'lunch']"></v-ons-switch></div>
+                                                    <div class="center">Lunch</div>
+                                                </v-ons-list-item>
+                                                <v-ons-list-item>
+                                                    <div class="left"><v-ons-switch v-model="checked_meals" :value="[plan.name, index, 'dinner']"></v-ons-switch></div>
+                                                    <div class="center">Dinner</div>
+                                                </v-ons-list-item>
+                                                <v-ons-list-item>
+                                                    <div class="left"><v-ons-switch v-model="checked_meals" :value="[plan.name, index, 'snacks']"></v-ons-switch></div>
+                                                    <div class="center">Snacks</div>
+                                                </v-ons-list-item>
+                                            </v-ons-list>
+                                        </div>
+                                    </v-ons-list-item>
+                                </v-ons-list>
+                            </div>
+                        </v-ons-list-item>
+                    </v-ons-list>
+                    <v-ons-button @click="add">Add</v-ons-button>
                 </div>
             </v-ons-page>
         </template>

@@ -4,6 +4,7 @@ from fractions import Fraction
 from vue import *
 from recipe import *
 from plan import *
+from groceries import *
 from js import VueOnsen, Vue, eval, document, console, PouchDB, window
 from store import store
 
@@ -33,13 +34,6 @@ class MainPage:
     def __init__(self):
         self.tabs = [
             {
-                'icon': 'md-home',
-                'label': 'Nutrition',
-                'page': {
-                    'template': '#nutrition',
-                },
-            },
-            {
                 'icon': 'md-book',
                 'label': 'Recipes',
                 'page': RecipePage,
@@ -52,9 +46,7 @@ class MainPage:
             {
                 'icon': 'md-shopping-cart', 
                 'label': 'Groceries',
-                'page': {
-                    'template': '#groceries',
-                },
+                'page': GroceriesPage,
             },
         ]
         console.log(self.tabs)

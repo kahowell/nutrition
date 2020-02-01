@@ -58,3 +58,16 @@ class NutritionAppStore(VueStore):
         #self.state.page_stack.pop()
 
 store = NutritionAppStore()
+
+class MealPlansStore(VueStore):
+    def __init__(self):
+        super().__init__()
+        self.state.plans = []
+        self.load_plans()
+
+    def load_plans(self):
+        def on_loaded(error, result):
+            self.state.plans = list(map(lambda row: row.doc, result.rows))
+        plans_db.allDocs({'include_docs': True}, on_loaded)
+
+meal_plans_store = MealPlansStore()

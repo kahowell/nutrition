@@ -1,5 +1,6 @@
 from datetime import datetime
 import json
+import math
 from fractions import Fraction
 from itertools import permutations
 
@@ -8,21 +9,8 @@ from js import VueOnsen, Vue, document, console, window
 
 from recommendations import drv, nutrient_names, nutrient_names_lookup
 from recommendations import nutrient_units as _nutrient_units
-from store import store, foods_db, recipes_db, plans_db
+from store import store, foods_db, recipes_db, plans_db, meal_plans_store
 
-
-class MealPlansStore(VueStore):
-    def __init__(self):
-        super().__init__()
-        self.state.plans = []
-        self.load_plans()
-
-    def load_plans(self):
-        def on_loaded(error, result):
-            self.state.plans = list(map(lambda row: row.doc, result.rows))
-        plans_db.allDocs({'include_docs': True}, on_loaded)
-
-meal_plans_store = MealPlansStore()
 
 class PlanStore(VueStore):
     def __init__(self):
@@ -154,7 +142,29 @@ class PlanPage:
     @property
     def nutrient_list(self, *args):
         return nutrient_names
-        
+
+    @property
+    def recipe_info_list(self, *args):
+        recipe_counts = {}
+        recipes = {}
+        for day in self.state.plan.days:
+            for (meal, foods) in day:
+                for food in foods:
+                    recipe_counts[food.name] = recipe_counts.setdefault(food.name, 0) + 1
+                    recipes[food.name] = food
+        recipe_info_list = []
+        for name in sorted(recipes.keys()):
+            recipe = recipes[name]
+            needed_servings = recipe_counts[name]
+            recipe_batches = math.ceil(needed_servings / float(recipe.servings))
+            total_servings = recipe_batches * float(recipe.servings)
+            recipe_info_list.append({
+                'recipe': recipe,
+                'count': recipe_batches,
+                'leftover_servings': total_servings - needed_servings,
+            })
+        return recipe_info_list
+
     @property
     def nutrient_units(self, *args):
         return _nutrient_units
