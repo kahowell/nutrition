@@ -50,8 +50,6 @@ def vue_class(cls):
     options['methods'] = methods
     options['computed'] = computed
 
-    print(cls, options)
-
     return options
 
 

@@ -12,6 +12,8 @@ app = App(id='net.kahowell.nutrition', name='Nutrition', sources=[
         '1F336.svg',  # hot pepper
         '1F373.svg',  # cooking
     ]),
+    Image(Url('https://github.com/hfg-gmuend/openmoji/raw/12.1.0/color/618x618/1F373.png', sha256sum='7a8036030e15ed0f50a5687918609712095e6fc08125fc6f7104cb2a829de63e'), size=(512, 512), filename='1F373_512.png'),
+    Image(Url('https://github.com/hfg-gmuend/openmoji/raw/12.1.0/color/618x618/1F373.png', sha256sum='7a8036030e15ed0f50a5687918609712095e6fc08125fc6f7104cb2a829de63e'), size=(192, 192), filename='1F373_192.png'),
     Url('https://cdn.jsdelivr.net/npm/vue@2.6.11/dist/vue.min.js', sha256sum='9e0156dd49c03744e79bbea60eebbbb94b5811c1b71b91f5fb38a8270dedfbaf'),
     Url('https://unpkg.com/vue-onsenui@2.6.2/dist/vue-onsenui.min.js', sha256sum='ca09a70c38496b73bc237ccd30d05dc0d7732cc96326eac0708c4e64101f29f7'),
     Url('https://unpkg.com/onsenui@2.10.10/js/onsenui.min.js', sha256sum='515743ef8887d2b5af8ca40f870805cf32969e339c7feb89f2ffff10c0203869'),

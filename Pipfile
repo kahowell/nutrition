@@ -8,6 +8,7 @@ requests = "*"
 flask = "*"
 tqdm = "*"
 jinja2 = "*"
+pillow = "*"
 
 [packages]
 

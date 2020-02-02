@@ -5,6 +5,7 @@ import shutil
 import subprocess
 
 import requests
+from PIL import Image as _Image
 from jinja2 import Environment, FileSystemLoader
 
 PYODIDE_URL = 'https://github.com/iodide-project/pyodide/releases/download/0.14.3/pyodide-build-0.14.3.tar.bz2'
@@ -62,7 +63,7 @@ class Directory:
     def build(self, root, **kwargs):
         path = os.path.join(root, self.path)
         if not os.path.exists(path):
-            os.path.makedirs(path)
+            os.makedirs(path)
 
     def __repr__(self):
         return f"<Directory path='{self.path}'>"
@@ -101,15 +102,15 @@ class Url:
     def build(self, root, copy=False, **kwargs):
         effective_filename = self.filename or os.path.basename(self.url)
         destination = os.path.join(root, effective_filename)
-        if os.path.exists(destination):
-            return destination
         cache_destination = os.path.join(CACHE_PATH, effective_filename)
+        if os.path.exists(destination) and destination != cache_destination:
+            return destination
         checksum = hashlib.sha256()
-        if not os.path.exists(destination):
-            if not os.path.exists(os.path.dirname(destination)):
-                os.makedirs(os.path.dirname(destination))
-            if not os.path.exists(os.path.dirname(cache_destination)):
-                os.makedirs(os.path.dirname(cache_destination))
+        if not os.path.exists(os.path.dirname(destination)):
+            os.makedirs(os.path.dirname(destination))
+        if not os.path.exists(os.path.dirname(cache_destination)):
+            os.makedirs(os.path.dirname(cache_destination))
+        if not os.path.exists(cache_destination):
             print(f'Downloading {self.url}...')
             with open(cache_destination, 'wb') as output:
                 r = requests.get(self.url)
@@ -119,7 +120,6 @@ class Url:
                     checksum.update(chunk)
                     output.write(chunk)
         else:
-            print(f'{self.url} already downloaded.')
             with open(cache_destination, 'rb') as cached:
                 while True:
                     chunk = cached.read(2048)
@@ -127,7 +127,7 @@ class Url:
                         break
                     checksum.update(chunk)
         actual = checksum.hexdigest()
-        if checksum.hexdigest() != self.sha256sum:
+        if actual != self.sha256sum:
             raise SystemError(f'for {effective_filename} expected sha256sum of {self.sha256sum}, got {actual} instead!')
         if cache_destination != destination:
             if copy:
@@ -168,6 +168,23 @@ class Archive:
         return f"<Archive source='{self.source}' #files='{len(self.files)}'>"
 
 
+class Image:
+    def __init__(self, source, size, filename=None):
+        self.source = source
+        self.size = size
+        self.filename = filename or os.path.basename(source)
+
+    def build(self, root, **kwargs):
+        destination = os.path.join(root, self.filename)
+        if os.path.exists(destination):
+            return
+        print(f'Resizing {self.source.url} into {self.filename} ({self.size})')
+        path = self.source.build(root=CACHE_PATH, **kwargs)
+        image = _Image.open(path)
+        image = image.resize(self.size)
+        image.save(destination)
+
+
 class PyodideRelease:
     def __init__(self, pyodide_reqs, url=PYODIDE_URL, sha256sum=PYODIDE_SHA256, initial_memory=5242880):
         self.pyodide_reqs = pyodide_reqs
@@ -203,9 +220,10 @@ class App:
         self.pyodide_reqs = detect_pyodide_python_requirements()
         self.sources = sources + [
             PyodideRelease(pyodide_reqs=self.pyodide_reqs, initial_memory=initial_memory),
-            Template(os.path.join('pyodideapp', 'pyodide_config.js.j2'), 'pyodide_config.js'),
             SourceFile(os.path.join('pyodideapp', 'bootstrap.js'), 'bootstrap.js'),
             SourceFile(os.path.join('pyodideapp', 'httpimport.py'), 'httpimport.py'),
+            SourceFile(os.path.join('pyodideapp', 'sw.js'), 'sw.js'),
+            SourceFile(os.path.join('pyodideapp', 'fetchimport.py'), 'fetchimport.py'),
          ]
 
     def build(self, root, enable_file_hack=False, copy=False, **kwargs):
@@ -223,6 +241,14 @@ class App:
         with open(requirements_path, 'w') as output:
             output.write(python_requirements)
         sh(f'pipenv run pip install --no-deps -r {requirements_path} --target {root}')
+        config = Template(os.path.join('pyodideapp', 'pyodide_config.js.j2'), 'pyodide_config.js')
+        template_args = dict(kwargs)
+        template_args['enable_file_hack'] = enable_file_hack  # TODO necessary?
+        # get list of files in the build root
+
+        www_files =  [os.path.relpath(os.path.join(root2, name), root) for root2, _, files in os.walk(root) for name in files]
+        template_args['www_files'] = www_files
+        config.build(root, **template_args)
         if enable_file_hack:
             file_hack_files = []
             file_hack_up_to_date = True

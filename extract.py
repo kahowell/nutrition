@@ -32,79 +32,79 @@ class FoodsSource:
         sr_dir = Archive(Url(SR_URL, sha256sum=SR_SHA256SUM)).build(root, copy=copy, **kwargs)
         support_dir = Archive(Url(SUPPORT_URL, sha256sum=SUPPORT_SHA256SUM)).build(root, copy=copy, **kwargs)
 
-        print('Extracting info from files')
-        categories = {row['id']: row['description'] for row in load(support_dir, 'food_category')}
-        attribute_types = {row['id']: row['name'] for row in load(support_dir, 'food_attribute_type')}
-        nutrients = {row['id']: row['name'] for row in map(energy_fix, load(support_dir, 'nutrient'))}
-        uoms = {row['id']: row['name'] for row in load(support_dir, 'measure_unit')}
-        foods = load(sr_dir, 'food')
-
-        food_attributes = {}
-        for row in load(sr_dir, 'food_attribute'):
-            fdc_id = row['fdc_id']
-            if fdc_id not in food_attributes:
-                food_attributes[fdc_id] = []
-            food_attributes[fdc_id].append(row)
-
-        food_nutrients = {}
-        for row in load(sr_dir, 'food_nutrient'):
-            fdc_id = row['fdc_id']
-            if fdc_id not in food_nutrients:
-                food_nutrients[fdc_id] = []
-            food_nutrients[fdc_id].append(row)
-
-        food_portions = {}
-        for row in load(sr_dir, 'food_portion'):
-            fdc_id = row['fdc_id']
-            if fdc_id not in food_portions:
-                food_portions[fdc_id] = []
-            food_portions[fdc_id].append(row)
-
-
-        print('Normalizing nutrient data')
-
-        all_foods = []
-
-        for food_record in tqdm(list(foods)):
-            fdc_id = food_record['fdc_id']
-            food = {'nutrients_per_100g':{}}
-            food['_id'] = food_record['description'].lower()
-            food['name'] = food_record['description']
-            food['fdc_id'] = food_record['fdc_id']
-            food['category'] = categories[food_record['food_category_id']]
-
-            for attribute in food_attributes.get(fdc_id, []):
-                attribute_name = attribute_types[attribute['food_attribute_type_id']]
-                if attribute_name == 'Common Name':
-                    if 'common_names' not in food:
-                        food['common_names'] = []
-                    food['common_names'].append(attribute['value'])
-                elif attribute_name == 'Additional Description':
-                    if 'additional_descriptions' not in food:
-                        food['additional_descriptions'] = []
-                    food['additional_descriptions'].append(attribute['value'])
-
-            for nutrient in food_nutrients.get(fdc_id, []):
-                nutrient_name = nutrients[nutrient['nutrient_id']]
-                food['nutrients_per_100g'][nutrient_name] = float(nutrient['amount'])
-
-            for portion_record in food_portions.get(fdc_id, []):
-                if 'portions' not in food:
-                    food['portions'] = []
-                uom = portion_record['measure_unit_id']
-                portion = {
-                    'amount': float(portion_record['amount']),
-                    'modifier': portion_record['modifier'],
-                    'weight_grams': float(portion_record['gram_weight']),
-                }
-                if portion_record['portion_description']:
-                    portion['description'] = portion_record['portion_description']
-                food['portions'].append(portion)
-
-            all_foods.append(food)
-
         cache_destination = os.path.join(CACHE_PATH, 'all_foods.json')
         if not os.path.exists(cache_destination):
+            print('Extracting info from files')
+            categories = {row['id']: row['description'] for row in load(support_dir, 'food_category')}
+            attribute_types = {row['id']: row['name'] for row in load(support_dir, 'food_attribute_type')}
+            nutrients = {row['id']: row['name'] for row in map(energy_fix, load(support_dir, 'nutrient'))}
+            uoms = {row['id']: row['name'] for row in load(support_dir, 'measure_unit')}
+            foods = load(sr_dir, 'food')
+
+            food_attributes = {}
+            for row in load(sr_dir, 'food_attribute'):
+                fdc_id = row['fdc_id']
+                if fdc_id not in food_attributes:
+                    food_attributes[fdc_id] = []
+                food_attributes[fdc_id].append(row)
+
+            food_nutrients = {}
+            for row in load(sr_dir, 'food_nutrient'):
+                fdc_id = row['fdc_id']
+                if fdc_id not in food_nutrients:
+                    food_nutrients[fdc_id] = []
+                food_nutrients[fdc_id].append(row)
+
+            food_portions = {}
+            for row in load(sr_dir, 'food_portion'):
+                fdc_id = row['fdc_id']
+                if fdc_id not in food_portions:
+                    food_portions[fdc_id] = []
+                food_portions[fdc_id].append(row)
+
+
+            print('Normalizing nutrient data')
+
+            all_foods = []
+
+            for food_record in tqdm(list(foods)):
+                fdc_id = food_record['fdc_id']
+                food = {'nutrients_per_100g':{}}
+                food['_id'] = food_record['description'].lower()
+                food['name'] = food_record['description']
+                food['fdc_id'] = food_record['fdc_id']
+                food['category'] = categories[food_record['food_category_id']]
+
+                for attribute in food_attributes.get(fdc_id, []):
+                    attribute_name = attribute_types[attribute['food_attribute_type_id']]
+                    if attribute_name == 'Common Name':
+                        if 'common_names' not in food:
+                            food['common_names'] = []
+                        food['common_names'].append(attribute['value'])
+                    elif attribute_name == 'Additional Description':
+                        if 'additional_descriptions' not in food:
+                            food['additional_descriptions'] = []
+                        food['additional_descriptions'].append(attribute['value'])
+
+                for nutrient in food_nutrients.get(fdc_id, []):
+                    nutrient_name = nutrients[nutrient['nutrient_id']]
+                    food['nutrients_per_100g'][nutrient_name] = float(nutrient['amount'])
+
+                for portion_record in food_portions.get(fdc_id, []):
+                    if 'portions' not in food:
+                        food['portions'] = []
+                    uom = portion_record['measure_unit_id']
+                    portion = {
+                        'amount': float(portion_record['amount']),
+                        'modifier': portion_record['modifier'],
+                        'weight_grams': float(portion_record['gram_weight']),
+                    }
+                    if portion_record['portion_description']:
+                        portion['description'] = portion_record['portion_description']
+                    food['portions'].append(portion)
+
+                all_foods.append(food)
+
             with open(cache_destination, 'w') as output:
                 output.write(json.dumps(all_foods))
 

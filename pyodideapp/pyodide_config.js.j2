@@ -5,44 +5,8 @@ pyodide_packages = [
     {% endfor %}
 ];
 
-if (document.URL.startsWith('file://')) {
-    document.write('<script src="file_hack.js"></script>');
-    fetch = function(url) {
-        console.debug(`fake fetch for ${url}`);
-        return Promise.resolve({
-            arrayBuffer: () => Promise.resolve(_files_hack[url]),
-            json: () => JSON.parse(new TextDecoder("utf-8").decode(_files_hack[url])),
-            text: () => new TextDecoder("utf-8").decode(_files_hack[url])
-        });
-    }
-    window.fetch = fetch;
-    class XMLHttpRequest {
-        constructor() {
-            this.responseType = '';
-        }
-        open(method, url, async) {
-            this.url = url;
-            console.debug(`fake xhr open for ${url}`);
-            if (_files_hack.hasOwnProperty(url)) {
-                this.status = 200;
-                this.response = _files_hack[url].buffer;
-            }
-            else {
-                this.status = 404;
-            }
-        }
-        get responseText() {
-            return new TextDecoder("utf-8").decode(_files_hack[this.url]);
-        }
-        send() {
-            if (this.onload) {
-                this.onload();
-            }
-        }
-    }
-    window.XMLHttpRequest = XMLHttpRequestOverride = XMLHttpRequest
-    delete WebAssembly.compileStreaming;
-    WebAssembly.instantiateStreaming = function(...args) {
-        WebAssembly.instantiate(...args)
-    }
-}
+pyodideapp_www_files = [
+    {% for file in www_files %}
+    './{{ file }}',
+    {% endfor %}
+];
