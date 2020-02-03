@@ -318,7 +318,7 @@ class App:
         args = parser.parse_args()
         args.func(**vars(args))
 
-    def serve(self):
+    def serve(self, host=None, port=None):
         import mimetypes
 
         from flask import Flask
@@ -331,7 +331,7 @@ class App:
         def root():
             return app.send_static_file('index.html')
 
-        app.run()
+        app.run(host=host, port=port)
 
     def __repr__(self):
         return f"<App #sources='{len(self.sources)}'>"

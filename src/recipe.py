@@ -186,7 +186,7 @@ class IngredientSearchStore(VueStore):
 
     def regexify_query(self):
         words = self.state.query.split()
-        regexified = '|'.join([word for word in ['.*'.join(permutation) for permutation in permutations(words)]])
+        regexified = '|'.join([word.lower() for word in ['.*'.join(permutation) for permutation in permutations(words)]])
         return regexified
 
 

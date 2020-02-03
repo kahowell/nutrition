@@ -19,7 +19,7 @@ class ModulePrefetchLoader(SourceLoader, MetaPathFinder):
         self.url_cache = {}
         
     def get_data(self, path):
-        return self.data_cache[path]
+        return self.data_cache[path].encode('utf-8')
 
     def get_filename(self, fullname):
         return self.url_cache[fullname]
