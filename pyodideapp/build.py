@@ -278,8 +278,9 @@ class App:
                 with open(os.path.join(root, 'file_hack.js'), 'w') as output:
                     output.write(template.render(files=file_hack_files))
 
-    def build_web(self, **kwargs):
-        self.build(root=WWW_PATH)
+    def build_web(self, copy=False, output=None, **kwargs):
+        root=output or WWW_PATH
+        self.build(root=root, copy=copy)
 
     def build_cordova(self, electron=False, android=False, ios=False, **kwargs):
         platforms = []
@@ -309,6 +310,8 @@ class App:
         parser.set_defaults(func=lambda *args, **kwargs: parser.print_usage())
         subparsers = parser.add_subparsers(description='commands')
         web_parser = subparsers.add_parser('web', help='Build a standard static web app')
+        web_parser.add_argument('--copy', action='store_true', help='copy rather than statically link')
+        web_parser.add_argument('--output', '-o', help='override output directory')
         web_parser.set_defaults(func=self.build_web)
         cordova_parser = subparsers.add_parser('cordova', help='Build a cordova-based mobile or electron app')
         cordova_parser.add_argument('--electron', action='store_true', help='include an electron app build')
