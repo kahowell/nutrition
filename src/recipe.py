@@ -156,6 +156,9 @@ class IngredientSearchStore(VueStore):
 
         def on_loaded(original_query):
             def _inner(error, result=None):
+                if error:
+                    console.error(error)
+                console.debug('query_result', result)
                 if self.state.query != original_query:
                     return
                 self.state.message = None
@@ -169,14 +172,23 @@ class IngredientSearchStore(VueStore):
             self.state.message = 'Loading...'
             disabled_categories = get_disabled_categories()
             selector = {
-                '_id': {'$regex': self.regexify_query()}
+                'keywords': {
+                    '$all': [keyword for keyword in self.state.query.split()]
+                },
             }
             if len(disabled_categories) > 0:
                 selector['category'] = {'$nin': disabled_categories}
             console.debug(selector)
-            foods_db.find({
-                'selector': selector
-            }, on_loaded(self.state.query))
+            def find(*args):
+                console.debug(args)
+                foods_db.find({
+                    'selector': selector
+                }, on_loaded(self.state.query))
+            foods_db.createIndex({
+                 'index': {
+                     'fields': ['keywords'],
+                 }
+            }).then(find)
         else:
             self.state.message = MORE_LETTERS_MESSAGE
 

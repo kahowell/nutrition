@@ -45,9 +45,8 @@ class GroceryListStore(VueStore):
 
     def save_item(self, item):
         def callback(error, result=None):
-            if error:
-                alert(error)
-            item._rev = result.rev
+            if result:
+                item._rev = result.rev
         groceries_db.put(item, callback)
 
 list_store = GroceryListStore()

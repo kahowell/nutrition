@@ -7,6 +7,7 @@ import csv
 import glob
 import json
 import os
+import re
 import shutil
 
 SR_URL = 'https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_%202019-04-02.zip'
@@ -67,12 +68,16 @@ class FoodsSource:
 
             all_foods = []
 
+
+            pattern = re.compile('[, ]')
+
             for food_record in tqdm(list(foods)):
                 fdc_id = food_record['fdc_id']
                 food = {'nutrients_per_100g':{}}
                 food['_id'] = food_record['description'].lower()
                 food['name'] = food_record['description']
                 food['fdc_id'] = food_record['fdc_id']
+                food['keywords'] = sorted(set([keyword for keyword in pattern.split(food['_id']) if keyword]))
                 food['category'] = categories[food_record['food_category_id']]
 
                 for attribute in food_attributes.get(fdc_id, []):

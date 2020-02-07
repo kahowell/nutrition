@@ -113,6 +113,20 @@ class MainPage:
     def open_configuration(self):
         store.push_page(ConfigurationPage)
 
+    async def reset_caches(self):
+        confirm = await PromiseProxy(self['$ons'].notification.confirm('Reset caches?'))
+        if confirm:
+            console.log('removing serviceworker registrations')
+            registrations = await PromiseProxy(window.navigator.serviceWorker.getRegistrations())
+            for registration in registrations:
+                await PromiseProxy(registration.unregister())
+            console.log('removing foods DB')
+            await PromiseProxy(foods_db.destroy())
+            console.log('removing window caches')
+            await PromiseProxy(window.caches.delete('nutrition'))
+            console.log('reloading')
+            window.location.reload()
+
 @vue_class
 class NutritionApp:
     options = {
