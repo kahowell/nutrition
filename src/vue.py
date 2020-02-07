@@ -1,8 +1,64 @@
+import asyncio
+import time
 from inspect import ismethod, isdatadescriptor, isfunction, ismemberdescriptor
 from itertools import chain
 from collections.abc import MutableSequence, MutableMapping
 
-from js import Vue, console, Object, eval
+from js import Vue, console, Object, eval, Promise, window
+
+
+class JavascriptEventLoop(asyncio.AbstractEventLoop):
+    def get_debug(self):
+        return False
+
+    def call_soon(self, callback, *args, context=None):
+        handle = asyncio.Handle(callback, args, self, context=context)
+        window.setTimeout(handle._run)
+        return handle
+
+    def call_soon_threadsafe(self, callback, *args, context=None):
+        return self.call_soon(callback, *args, context=context)
+
+    def call_later(self, when, callback, *args, context=None):
+        handle = asyncio.Handle(callback, args, self, context=context)
+        window.setTimeout(handle._run, when * 1000.0)
+        return handle
+
+    def call_at(self, when, callback, *args, context=None):
+        delay = when - self.time()
+        self.call_later(delay, callback, *args, context=context)
+
+    def create_task(self, coro):
+        return asyncio.Task(coro, loop=self)
+
+    def create_future(self):
+        return asyncio.Future(loop=self)
+
+    def is_running(self):
+        return True
+
+    def time(self):
+        return time.monotonic()
+
+
+loop = JavascriptEventLoop()
+asyncio.events._set_running_loop(loop)
+asyncio.set_event_loop(loop)
+
+# adapt a JS promise to a Python asyncio.Future
+class PromiseProxy:
+    def __init__(self, promise):
+        self.future = loop.create_future()
+        promise.then(self.resolve, self.fail)
+
+    def __await__(self):
+        return self.future.__await__()
+
+    def resolve(self, result):
+        self.future.set_result(result)
+
+    def fail(self, failure):
+        self.future.set_exception(failure)
 
 
 class JsFn:
@@ -12,7 +68,18 @@ class JsFn:
         self.this = this
         self.args = args
 
-    def call(self, this, *args):
+    def call(self, this, *args):  # todo handle args to coroutine?
+        def _promise_func(resolve, reject):
+            task = asyncio.create_task(self._method(this, *chain(self.args, args)))
+            def done(future):
+                exception = task.exception()
+                if task.exception():
+                    reject(exception)
+                else:
+                    resolve(task.result())
+            task.add_done_callback(done)
+        if asyncio.iscoroutinefunction(self._method):
+            return Promise.new(_promise_func)
         return self._method(this, *chain(self.args, args))
         #return self._method(ObjectProxy(this), *chain(self.args, args))
 
@@ -24,8 +91,6 @@ class JsFn:
 
     def bind(self, this, *args):
         return JsFn(self._method, this, *args)
-
-
 
 
 def vue_class(cls):

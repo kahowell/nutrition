@@ -329,6 +329,7 @@ class App:
         self.build_web()
         mimetypes.add_type('application/wasm', '.wasm')
         app = Flask('app', static_folder='build/www', static_url_path='/')
+        app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
         @app.route('/')
         def root():

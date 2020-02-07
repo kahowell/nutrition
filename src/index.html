@@ -164,14 +164,40 @@
     </head>
     <body>
         <template id="navigator">
-            <v-ons-navigator swipeable :page-stack="page_stack"/>
+            
+                    <v-ons-navigator swipeable :page-stack="page_stack"/>
+              
         </template>
         <template id="main">
-            <v-ons-page id="logo-page">
-                <v-ons-toolbar>
-                    <div class="center">{{ title }}</div>
-                </v-ons-toolbar>
-                <v-ons-tabbar position="bottom" :tabs="tabs" :visible="true" v-on:update:index="update_index" :index="index" swipeable/>
+            <v-ons-page>
+            <input style="display:none" id="import_input" type="file" @change="import_data()">
+            <v-ons-splitter>
+                <v-ons-splitter-side swipeable width="150px" collapse="" side="right" :open.sync="open_side">
+                    <v-ons-page>
+                        <v-ons-list>
+                            <v-ons-list-item tappable @click="load_import()">
+                                <div class="center">Import Data</div>
+                            </v-ons-list-item>
+                            <v-ons-list-item tappable @click="export_data()">
+                                <div class="center">Export Data</div>
+                            </v-ons-list-item>
+                        </v-ons-list>
+                    </v-ons-page>
+                </v-ons-splitter-side>
+                <v-ons-splitter-content>
+                    <v-ons-page>
+                        <v-ons-toolbar>
+                            <div class="center">{{ title }}</div>
+                            <div class="right">
+                                <v-ons-toolbar-button @click="open_extra_menu()">
+                                    <v-ons-icon icon="md-more-vert"></v-ons-icon>
+                                </v-ons-toolbar-button>
+                            </div>
+                        </v-ons-toolbar>
+                        <v-ons-tabbar position="bottom" :tabs="tabs" :visible="true" v-on:update:index="update_index" :index="index" swipeable/>
+                    </v-ons-page>
+                </v-ons-splitter-content>
+            </v-ons-splitter>
             </v-ons-page>
         </template>
         <template id="nutrition">
@@ -436,7 +462,7 @@
         <template id="recipes">
             <v-ons-page>
                 <div class="content">
-                    <p class="text" v-if="has_no_recipes">
+                    <p class="text" v-if="recipes.length == 0">
                         No recipes added yet. Use the button below to add a new recipe.
                     </p>
                     <v-ons-list>

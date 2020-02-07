@@ -46,10 +46,6 @@ class RecipePage:
         store.load_recipes()
 
     @property
-    def has_no_recipes(self, *args):
-        return store.state.has_no_recipes
-
-    @property
     def recipes(self, *args):
         return store.state.recipes
 

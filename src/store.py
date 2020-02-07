@@ -7,6 +7,7 @@ from vue import *
 foods_db = PouchDB.new('foods')
 recipes_db = PouchDB.new('recipes')
 plans_db = PouchDB.new('plans')
+groceries_db = PouchDB.new('groceries')
 
 
 class NutritionAppStore(VueStore):
@@ -15,7 +16,6 @@ class NutritionAppStore(VueStore):
         self.state.message = 'Loading...'
         self.state.page_stack = []
         self.state.recipes = []
-        self.state.has_no_recipes = False
         self.main_page = None
         window.onpopstate = self.onpopstate
 
@@ -37,8 +37,6 @@ class NutritionAppStore(VueStore):
     def load_recipes(self):
         def on_loaded(error, result):
             self.state.recipes = list(map(lambda row: row.doc, result.rows))
-            if len(self.state.recipes) == 0:
-                self.state.has_no_recipes = True
         recipes_db.allDocs({'include_docs': True}, on_loaded)
 
     def load_main_page(self):
