@@ -5,6 +5,7 @@ from vue import *
 from recipe import *
 from plan import *
 from groceries import *
+from config import *
 from js import VueOnsen, Vue, JSON, eval, document, console, PouchDB, window, URL, Blob, FileReader
 from store import store
 
@@ -108,6 +109,9 @@ class MainPage:
         link.click()
         link.remove()
         URL.revokeObjectURL(url)
+
+    def open_configuration(self):
+        store.push_page(ConfigurationPage)
 
 @vue_class
 class NutritionApp:

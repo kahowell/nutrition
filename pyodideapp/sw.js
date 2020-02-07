@@ -17,16 +17,16 @@ self.addEventListener('activate', function() {
 self.addEventListener('fetch', (event) => {
     event.respondWith(
         caches.match(event.request, {ignoreVary: true}).then(function(response) {
-            let fresh = fetch(event.request).then(function(response) {
-                return caches.open('nutrition').then(cache => {
-                    cache.put(event.request, response.clone());
-                    return response;
-                }).catch(e => console.log(e));
-            })
+            let fresh = fetch(event.request);
             if (response === undefined) {
                 return fresh;
             }
             else {
+                fresh.then(function(response) {
+                    caches.open('nutrition').then(cache => {
+                        cache.put(event.request, response.clone());
+                    }).catch(e => console.log(e));
+                })
                 return response;
             }
         })

@@ -160,6 +160,9 @@
             .nutfacts .calories div:last-child {
                 font-size: 22pt;
             }
+            #configuration .left {
+                margin-right: 2em;
+            }
         </style>
     </head>
     <body>
@@ -180,6 +183,9 @@
                             </v-ons-list-item>
                             <v-ons-list-item tappable @click="export_data()">
                                 <div class="center">Export Data</div>
+                            </v-ons-list-item>
+                            <v-ons-list-item tappable @click="open_configuration()">
+                                <div class="center">Configuration</div>
                             </v-ons-list-item>
                         </v-ons-list>
                     </v-ons-page>
@@ -719,6 +725,42 @@
                         </v-ons-list-item>
                     </v-ons-list>
                     <v-ons-button @click="add">Add</v-ons-button>
+                </div>
+            </v-ons-page>
+        </template>
+        <template id="configuration-page">
+            <v-ons-page id="configuration">
+                <v-ons-toolbar>
+                    <div class="left">
+                        <v-ons-back-button>Back</v-ons-back-button>
+                    </div>
+                    <div class="center">Configuration</div>
+                </v-ons-toolbar>
+                <div class="content">
+                    <v-ons-list>
+                        <v-ons-list-header>Syncing</v-ons-list-header>
+                        <v-ons-list-item>
+                            <div class="left">CouchDB Host</div>
+                            <div class="center"><v-ons-input v-model="config.couch_host"></v-ons-input></div>
+                        </v-ons-list-item>
+                        <v-ons-list-item>
+                            <div class="left">CouchDB Port</div>
+                            <div class="center"><v-ons-input v-model="config.couch_port"></v-ons-input></div>
+                        </v-ons-list-item>
+                        <v-ons-list-item>
+                            <div class="left">CouchDB Username</div>
+                            <div class="center"><v-ons-input v-model="config.couch_username"></v-ons-input></div>
+                        </v-ons-list-item>
+                        <v-ons-list-item>
+                            <div class="left">CouchDB Password</div>
+                            <div class="center"><v-ons-input type="password" v-model="config.couch_password"></v-ons-input></div>
+                        </v-ons-list-item>
+                        <v-ons-list-item>
+                            <div class="left">Sync Enabled</div>
+                            <div class="center"><v-ons-switch v-model="config.sync_enabled"></v-ons-switch></div>
+                        </v-ons-list-item>
+                    </v-ons-list>
+                    <v-ons-button @click="save_config()">Save Config</v-ons-button>
                 </div>
             </v-ons-page>
         </template>
