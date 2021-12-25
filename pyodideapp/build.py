@@ -8,8 +8,8 @@ import requests
 from PIL import Image as _Image
 from jinja2 import Environment, FileSystemLoader
 
-PYODIDE_URL = 'https://github.com/iodide-project/pyodide/releases/download/0.14.3/pyodide-build-0.14.3.tar.bz2'
-PYODIDE_SHA256 = '6ac6020973def85278877fac1433bdd878c89dee6844f29fd57849875acf122e'
+PYODIDE_URL = 'https://github.com/pyodide/pyodide/releases/download/0.17.0/pyodide-build-0.17.0.tar.bz2'
+PYODIDE_SHA256 = '84670f8b7fc8e9c803b4ed1ba271dbcd32ab8ef0ecfa94496b04a6e56893729b'
 CACHE_PATH = os.path.join('build', 'cache')
 WWW_PATH = os.path.join('build', 'www')
 CORDOVA_PATH = os.path.join('build', 'cordova')
@@ -188,14 +188,14 @@ class Image:
 class PyodideRelease:
     def __init__(self, pyodide_reqs, url=PYODIDE_URL, sha256sum=PYODIDE_SHA256, initial_memory=5242880):
         self.pyodide_reqs = pyodide_reqs
-        self.files = [
+        self.files = map(lambda path: os.path.join('pyodide', path), [
             'pyodide.js',
             'pyodide.asm.wasm',
             'pyodide.asm.data.js',
             'pyodide.asm.data',
             'pyodide.asm.js',
             'packages.json',
-        ] + self.pyodide_reqs
+        ] + self.pyodide_reqs)
         self.source_archive = Archive(Url(url, sha256sum=sha256sum), files=self.files)
 
     def build(self, root, copy=False, **kwargs):
@@ -205,7 +205,7 @@ class PyodideRelease:
         self.source_archive.build(root=cache_destination)
         for file in self.files:
             source = os.path.join(cache_destination, file)
-            destination = os.path.join(root, file)
+            destination = os.path.join(root, *file.split(os.path.sep)[1:])
             if not os.path.exists(destination):
                 if copy:
                     shutil.copy(source, destination)
