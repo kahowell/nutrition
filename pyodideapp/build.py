@@ -33,7 +33,7 @@ class SourceFile:
         destination = os.path.join(root, self.destination)
         if copy and (not os.path.exists(destination) or os.path.getmtime(self.source) > os.path.getmtime(destination)):
             shutil.copy(self.source, destination)
-        if not copy and not os.path.exists(destination):
+        if not copy and not os.path.islink(destination):
             os.symlink(os.path.abspath(self.source), destination)
 
     def __repr__(self):
@@ -71,7 +71,7 @@ class Directory:
 
 class SourceDirectory:
     def __init__(self, path):
-        self.path = path 
+        self.path = path
         self.sources = []
         for root, dirs, files in os.walk(self.path):
             for name in dirs:
@@ -157,10 +157,12 @@ class Archive:
         for file in self.files:  # TODO handle self.files=None, directories, globs
             source = os.path.join(cache_destination, file)
             destination = os.path.join(root, file)
-            if not os.path.exists(destination):
-                if copy:
-                    shutil.copy(source, destination)
-                else:
+            dest_dir = os.path.dirname(destination)
+            if not os.path.exists(dest_dir):
+                os.makedirs(dest_dir)
+            if copy and not os.path.exists(destination):
+                shutil.copy(source, destination)
+            elif not os.path.islink(destination):
                     os.symlink(os.path.abspath(source), destination)
         return cache_destination
 
@@ -188,14 +190,14 @@ class Image:
 class PyodideRelease:
     def __init__(self, pyodide_reqs, url=PYODIDE_URL, sha256sum=PYODIDE_SHA256, initial_memory=5242880):
         self.pyodide_reqs = pyodide_reqs
-        self.files = map(lambda path: os.path.join('pyodide', path), [
+        self.files = list(map(lambda path: os.path.join('pyodide', path), [
             'pyodide.js',
             'pyodide.asm.wasm',
             'pyodide.asm.data.js',
             'pyodide.asm.data',
             'pyodide.asm.js',
             'packages.json',
-        ] + self.pyodide_reqs)
+        ] + self.pyodide_reqs))
         self.source_archive = Archive(Url(url, sha256sum=sha256sum), files=self.files)
 
     def build(self, root, copy=False, **kwargs):
@@ -206,11 +208,13 @@ class PyodideRelease:
         for file in self.files:
             source = os.path.join(cache_destination, file)
             destination = os.path.join(root, *file.split(os.path.sep)[1:])
-            if not os.path.exists(destination):
-                if copy:
-                    shutil.copy(source, destination)
-                else:
-                    os.symlink(os.path.abspath(source), destination)
+            dest_dir = os.path.dirname(destination)
+            if not os.path.exists(dest_dir):
+                os.makedirs(dest_dir)
+            if copy and not os.path.exists(destination):
+                shutil.copy(source, destination)
+            elif not os.path.islink(destination):
+                os.symlink(os.path.abspath(source), destination)
 
 
 class App:
