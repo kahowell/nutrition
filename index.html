@@ -1,0 +1,814 @@
+<html>
+    <head>
+        <meta charset="utf-8"/>
+        <link rel="shortcut icon" href="#">
+        <link rel="manifest" href="nutrition.webmanifest">
+        <script src="pyodide_config.js"></script>
+        <script src="bootstrap.js"></script>
+        <link rel="stylesheet" href="onsenui.min.css">
+        <link rel="stylesheet" href="onsen-css-components.min.css">
+        <script src="onsenui.min.js"></script>
+        <style>
+            [v-cloak] {
+                display: none;
+            }
+            .app-icon {
+                width: 4rem;
+            }
+            .loading {
+                font-family: sans-serif !important;
+            }
+            .loading .background {
+                background-color: rgb(166, 255, 166) !important;
+            }
+            .loading ons-row {
+                height: 100%;
+            }
+            .fab-margin {
+                margin-bottom: 90px;
+            }
+            ons-page .content .text {
+                margin-right: 16px;
+                margin-left: 16px;
+            }
+            ons-carousel-item div {
+                margin-left: 5px;
+                margin-right: 5px;
+            }
+            ons-carousel .ons-swiper-target {
+                height: unset !important;
+            }
+            .list-item--material {
+                padding-left: 16px !important;
+                padding-right: 16px !important;
+            }
+            .list-item--material__center, .list-item--material__left:empty {
+                padding-right: 0px !important;
+            }
+            .padding-left {
+                padding-left: 2em;
+            }
+            .margin-right {
+                margin-right: 2em;
+            }
+            ons-input {
+                width: 100%;
+            }
+            ons-search-input {
+                width: 100%;
+            }
+            ons-list-item div {
+                padding-right: 0;
+            }
+            .loading img {
+                animation-name: spin;
+                animation-iteration-count: infinite;
+                animation-duration: 2s;
+            }
+            .message {
+                font-size: 24pt;
+            }
+            textarea {
+                width: 100% !important;
+            }
+            .instructions li {
+                margin-right: 16px;
+                margin-bottom: 16px;
+            }
+            @keyframes spin {
+                from {
+                    transform: rotate(0deg);
+                }
+                to {
+                    transform: rotate(360deg);
+                }
+            }
+            .nutfacts {
+                background-color: white;
+            }
+            .nutfacts hr {
+                height: 0.25pt;
+                border: 0;
+            }
+            .nutfacts .bold {
+                font-weight: 900;
+            }
+            .nutfacts .italic {
+                font-style: oblique;
+            }
+            .nutfacts {
+                border: 1px solid black;
+                padding: 1em;
+                display: inline-block;
+                font-family: Helvetica, sans-serif;
+                font-size: 8pt;
+                width: 185pt;
+            }
+            .nutfacts hr {
+                background-color: black;
+            }
+            .nutfacts .title {
+                font-weight: 900;
+                font-size: 26pt;
+            }
+            .nutfacts .header-line {
+                height: 7pt;
+            }
+            .nutfacts .amount-per-serving {
+                font-weight: 900;
+            }
+            .nutfacts .calories {
+                display: flex;
+                justify-content: space-between;
+            }
+            .nutfacts .section-line {
+                height: 3pt;
+            }
+            .nutfacts .pct-daily {
+                font-size: 6pt;
+                text-align: right;
+            }
+            .nutfacts .indent {
+                margin-left: 8pt;
+            }
+            .nutfacts .vitamin-line,.nutrient {
+                display: flex;
+                justify-content: space-between;
+            }
+            .nutfacts .vitamin-line,.nutrient div:first-child, .vitamin-line div:last-child {
+                flex: 49;
+            }
+            .nutfacts .vitamin-line,.nutrient div:last-child {
+                text-align: right;
+            }
+            .nutfacts .note ul {
+                padding-left: 8pt;
+                list-style-type: "* ";
+            }
+            .nutfacts .servings,.calories {
+                display: flex;
+                font-weight: 900;
+                justify-content: space-between;
+                align-items: baseline;
+            }
+            .nutfacts .servings,.calories div:last-child {
+                text-align: right;
+            }
+            .nutfacts .calories div:first-child {
+                font-size: 14pt;
+            }
+            .nutfacts .calories div:last-child {
+                font-size: 22pt;
+            }
+            #configuration .left {
+                margin-right: 2em;
+            }
+        </style>
+    </head>
+    <body>
+        <template id="navigator">
+            
+                    <v-ons-navigator swipeable :page-stack="page_stack"/>
+              
+        </template>
+        <template id="main">
+            <v-ons-page>
+            <input style="display:none" id="import_input" type="file" @change="import_data()">
+            <v-ons-splitter>
+                <v-ons-splitter-side swipeable width="150px" collapse="" side="right" :open.sync="open_side">
+                    <v-ons-page>
+                        <v-ons-list>
+                            <v-ons-list-item tappable @click="load_import()">
+                                <div class="center">Import Data</div>
+                            </v-ons-list-item>
+                            <v-ons-list-item tappable @click="export_data()">
+                                <div class="center">Export Data</div>
+                            </v-ons-list-item>
+                            <v-ons-list-item tappable @click="open_configuration()">
+                                <div class="center">Configuration</div>
+                            </v-ons-list-item>
+                            <v-ons-list-item tappable @click="reset_caches()">
+                                <div class="center">Reset Caches</div>
+                            </v-ons-list-item>
+                        </v-ons-list>
+                    </v-ons-page>
+                </v-ons-splitter-side>
+                <v-ons-splitter-content>
+                    <v-ons-page>
+                        <v-ons-toolbar>
+                            <div class="center">{{ title }}</div>
+                            <div class="right">
+                                <v-ons-toolbar-button @click="open_extra_menu()">
+                                    <v-ons-icon icon="md-more-vert"></v-ons-icon>
+                                </v-ons-toolbar-button>
+                            </div>
+                        </v-ons-toolbar>
+                        <v-ons-tabbar position="bottom" :tabs="tabs" :visible="true" v-on:update:index="update_index" :index="index" swipeable/>
+                    </v-ons-page>
+                </v-ons-splitter-content>
+            </v-ons-splitter>
+            </v-ons-page>
+        </template>
+        <template id="nutrition">
+            <v-ons-page>
+                <div class="content">
+                    <p class="text">
+                        Welcome!
+                        To get started, add some recipes. Once a recipe is added, you'll be able to add it to a meal plan, and then
+                        see reports on nutrition.
+                    </p>
+                </div>
+            </v-ons-page>
+        </template>
+        <template id="add-recipe">
+            <v-ons-page class="add-recipe">
+                <v-ons-toolbar>
+                    <div class="left">
+                        <v-ons-back-button>Recipes</v-ons-back-button>
+                    </div>
+                    <div class="center">Add/Edit Recipe</div>
+                </v-ons-toolbar>
+                <div class="content">
+                    <v-ons-list>
+                        <v-ons-list-item>
+                            <v-ons-input placeholder="Recipe Name" float v-model="recipe.name"/>
+                        </v-ons-list-item>
+                    </v-ons-list>
+                    <v-ons-list>
+                        <v-ons-list-item>
+                            <v-ons-input placeholder="Servings" float v-model="recipe.servings"/>
+                        </v-ons-list-item>
+                    </v-ons-list>
+                    <br>
+                    <v-ons-list>
+                        <v-ons-list-header>Ingredients</v-ons-list-header>
+                        <v-ons-list-item v-for="(ingredient, index) in recipe.ingredients">
+                            <div class="center">
+                                <v-ons-row>
+                                    <v-ons-col class="margin-right">
+                                        {{ ingredient.ingredient.name }}
+                                    </v-ons-col>
+                                    <v-ons-col class="margin-right">
+                                        <v-ons-input placeholder="Amount" float v-model="ingredient.amount"/>
+                                    </v-ons-col>
+                                    <v-ons-col>
+                                        <v-ons-select v-model="ingredient.portion">
+                                            <!-- TODO conversions! -->
+                                            <option v-for="portion in ingredient.ingredient.portions">{{ portion.modifier }}</option>
+                                        </v-ons-select>
+                                    </v-ons-col>
+                                </v-ons-row>
+                            </div>
+                            <div class="right" @click.stop="remove_ingredient(index)"><v-ons-icon icon="md-delete"></v-ons-icon></div>
+                        </v-ons-list-item>
+                    </v-ons-list>
+                    <v-ons-button v-on:click="open_ingredients">Add Ingredient</v-ons-button>
+                    <br>
+                    <br>
+                    <v-ons-list class="instructions">
+                        <v-ons-list-header>Instructions</v-ons-list-header>
+                        <ol>
+                            <li v-for="(instruction, index) in recipe.instructions">
+                                <div style="display: flex">
+                                    <textarea class="textarea" placeholder="instruction" v-model="instruction.text">{{ instruction.text }}</textarea>
+                                    <div style="padding: 10px" @click.stop="remove_instruction(index)"><v-ons-icon icon="md-delete"></v-ons-icon></div>
+                                </div>
+                            </li>
+                        </ol>
+                    </v-ons-list>
+                    <v-ons-button v-on:click="add_instruction">Add Instruction</v-ons-button>
+                    <br>
+                    <br>
+                    <v-ons-button v-on:click="save" :disabled="save_disabled">Save</v-ons-button>
+                </div>
+            </v-ons-page>
+        </template>
+        <template id="nutfacts">
+            <div class="nutfacts">
+                <div class="title">
+                    Nutrition Facts
+                </div>
+                <hr>
+                <div class="serving-size">
+                    {{ servings }} servings
+                </div>
+                <div class="servings">
+                    <div>Serving size</div>
+                    <div v-if="servings == 1">
+                        whole recipe
+                    </div>
+                    <div v-if="servings != 1">
+                        1/{{ servings }} of recipe
+                    </div>
+                </div>
+                <hr class="header-line">
+                <div class="amount-per-serving">
+                    Amount Per Serving
+                </div>
+                <div class="calories">
+                    <div>
+                        Calories
+                    </div>
+                    <div>
+                        {{ format_amount(nutrients.Energy) }}
+                    </div>
+                </div>
+                <hr class="section-line">
+                <div class="pct-daily bold">
+                    % Daily Value*
+                </div>
+                <hr>
+                <div class="nutrient">
+                    <div>
+                    <span class="bold">Total Fat</span> {{ format_amount(nutrients["Total lipid (fat)"]) }}g
+                    </div>
+                    <div class="bold">{{ get_percent(nutrients["Total lipid (fat)"], 'Fat') }}%</div>
+                </div>
+                <div class="indent">
+                    <hr>
+                    <div class="nutrient">
+                        <div>Saturated Fat {{ format_amount(nutrients["Fatty acids, total saturated"]) }}g</div>
+                        <div class="bold">{{ get_percent(nutrients["Fatty acids, total saturated"], 'Saturated fat') }}%</div>
+                    </div>
+                    <hr>
+                    <span class="italic">Trans</span> Fat {{ format_amount(nutrients["Fatty acids, total trans"]) }}g
+                </div>
+                <hr>
+                <div class="nutrient">
+                    <div><span class="bold">Cholesterol</span> {{ format_amount(nutrients["Cholesterol"]) }}mg</div>
+                    <div class="bold">{{ get_percent(nutrients["Cholesterol"], 'Cholesterol') }}%</div>
+                </div>
+                <hr>
+                <div class="nutrient">
+                    <div><span class="bold">Sodium</span> {{ format_amount(nutrients["Sodium, Na"]) }}mg</div>
+                    <div class="bold">{{ get_percent(nutrients["Sodium, Na"], 'Sodium') }}%</div>
+                </div>
+                <hr>
+                <div class="nutrient">
+                    <div><span class="bold">Total Carbohydrate</span> {{ format_amount(nutrients["Carbohydrate, by difference"]) }}g</div>
+                    <div class="bold">{{ get_percent(nutrients["Carbohydrate, by difference"], 'Carbohydrate') }}%</div>
+                </div>
+                <div class="indent">
+                    <hr>
+                    <div class="nutrient">
+                    Dietary Fiber {{ format_amount(nutrients["Fiber, total dietary"]) }}g
+                    </div>
+                    <hr>
+                    <div class="nutrient">
+                    Total Sugars {{ format_amount(nutrients["Sugars, total including NLEA"]) }}g
+                    </div>
+                </div>
+                <hr>
+                <div>
+                    <span class="bold">Protein</span> {{ format_amount(nutrients.Protein) }}g
+                </div>
+                <hr class="header-line">
+                <div class="vitamin-line">
+                    <div>
+                        Vitamin A {{ format_amount(nutrients["Vitamin A, RAE"]) }}mcg
+                    </div>
+                    <div>
+                        {{ get_percent(nutrients["Vitamin A, RAE"], 'Vitamin A') }}%
+                    </div>
+                </div>
+                <hr>
+                <div class="vitamin-line">
+                    <div>
+                        Vitamin C {{ format_amount(nutrients["Vitamin C, total ascorbic acid"]) }}mg
+                    </div>
+                    <div>
+                        {{ get_percent(nutrients["Vitamin C, total ascorbic acid"], 'Vitamin C') }}%
+                    </div>
+                </div>
+                <hr>
+                <div class="vitamin-line">
+                    <div>
+                        Calcium {{ format_amount(nutrients["Calcium, Ca"]) }}mg
+                    </div>
+                    <div>
+                        {{ get_percent(nutrients["Calcium, Ca"], 'Calcium') }}%
+                    </div>
+                </div>
+                <hr>
+                <div class="vitamin-line">
+                    <div>
+                        Iron {{ format_amount(nutrients["Iron, Fe"]) }}mg
+                    </div>
+                    <div>
+                        {{ get_percent(nutrients["Iron, Fe"], 'Iron') }}%
+                    </div>
+                </div>
+                <hr>
+                <div class="vitamin-line">
+                    <div>
+                        Vitamin D {{ format_amount(nutrients["Vitamin D (D2 + D3)"]) }}mcg
+                    </div>
+                    <div>
+                        {{ get_percent(nutrients["Vitamin D (D2 + D3)"], 'Vitamin D') }}%
+                    </div>
+                </div>
+                <hr>
+                <div class="vitamin-line">
+                    <div>
+                        Potassium {{ format_amount(nutrients["Potassium, K"]) }}mg
+                    </div>
+                    <div>
+                        {{ get_percent(nutrients["Potassium, K"], 'Potassium') }}%
+                    </div>
+                </div>
+                <hr class="section-line">
+                <div class="note">
+                    <ul>
+                        <li>
+                            The % Daily Value (DV) tells you how much a nutrient in a serving of food contributes to a daily diet. 2,000 calories a day is used for general nutrition advice.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </template>
+        <template id="add-ingredient">
+            <v-ons-page class="add-ingredient">
+                <v-ons-toolbar>
+                    <div class="left">
+                        <v-ons-back-button>Add/Edit Recipe</v-ons-back-button>
+                    </div>
+                    <div class="center">Add Ingredient</div>
+                </v-ons-toolbar>
+                <div class="content">
+                    <v-ons-list>
+                        <v-ons-list-item>
+                            <v-ons-search-input placeholder="Search Ingredients" v-on:input="update_search"/>
+                        </v-ons-list-item>
+                    </v-ons-list>
+                    <v-ons-list>
+                        <v-ons-list-item expandable>
+                          Filters
+                          <div class="expandable-content">
+                            <v-ons-list>
+                                <v-ons-list-item v-for="(value, category) in categories">
+                                    <div class="center">
+                                        {{ category }}
+                                    </div>
+                                    <div class="right">
+                                        <v-ons-switch v-on:change="schedule_search" v-model="categories[category]"/>
+                                    </div>
+                                </v-ons-list-item>
+                            </v-ons-list>
+                          </div>
+                        </v-ons-list-item>
+                      </v-ons-list>
+                      <br>
+                    <v-ons-list>
+                        <v-ons-list-header>Matches</v-ons-list-header>
+                        <v-ons-list-item v-for="match in matches" v-on:click="add_ingredient(match._id)">
+                            {{ match.name }}
+                        </v-ons-list-item>
+                    </v-ons-list>
+                    <p class="text">{{ message }}</p>
+                </div>
+            </v-ons-page>
+        </template>
+        <template id="recipes">
+            <v-ons-page>
+                <div class="content">
+                    <p class="text" v-if="recipes.length == 0">
+                        No recipes added yet. Use the button below to add a new recipe.
+                    </p>
+                    <v-ons-list>
+                        <v-ons-list-item v-for="recipe in recipes" v-on:click="view_recipe(recipe._id)">
+                            <div class="left">{{ recipe.name }}</div>
+                            <div class="right" @click.stop="remove_recipe(recipe)"><v-ons-icon icon="md-delete"></v-ons-icon></div>
+                        </v-ons-list-item>
+                    </v-ons-list>
+                    <div class="fab-margin"></div>
+                </div>
+                <v-ons-fab position="bottom right" v-on:click="add_recipe">
+                    <v-ons-icon icon="md-plus"/>
+                </v-ons-fab>
+            </v-ons-page>
+        </template>
+        <template id="view-recipe">
+            <v-ons-page>
+                <v-ons-toolbar>
+                    <div class="left">
+                        <v-ons-back-button>Recipes</v-ons-back-button>
+                    </div>
+                    <div class="center">{{ recipe.name }}</div>
+                </v-ons-toolbar>
+                <div class="content">
+                    <div class="text">
+                        <p>Serves {{ recipe.servings }}</p>
+                        <h2>Ingredients</h2>
+                        <ul>
+                            <li v-for="ingredient in recipe.ingredients">{{ ingredient.ingredient.name }} - {{ ingredient.amount }} {{ ingredient.portion }}</li>
+                        </ul>
+                        <h2>Instructions</h2>
+                        <ol>
+                            <li v-for="instruction in recipe.instructions">{{ instruction.text }}</li>
+                        </ol>
+                        <nutrition-facts :nutrients="recipe.nutrients_per_serving" :servings="recipe.servings"></nutrition-facts>
+                        <br/>
+                        <br/>
+                        <v-ons-button @click="edit_recipe(recipe)">Edit Recipe</v-ons-button>
+                    </div>
+                </div>
+            </v-ons-page>
+        </template>
+        <template id="mealplans">
+            <v-ons-page>
+                <div class="content">
+                    <p class="text" v-if="plans.length == 0">
+                        No meal plans added yet. Use the button below to add a new meal plan.
+                    </p>
+                    <v-ons-list>
+                        <v-ons-list-item v-for="plan in plans" v-on:click="view_plan(plan._id)">
+                            <div class="left">{{ plan.name }}</div>
+                            <div class="right" @click.stop="remove_plan(plan)"><v-ons-icon icon="md-delete"></v-ons-icon></div>
+                        </v-ons-list-item>
+                    </v-ons-list>
+                    <div class="fab-margin"></div>
+                </div>
+                <v-ons-fab position="bottom right" v-on:click="add_plan">
+                    <v-ons-icon icon="md-plus"/>
+                </v-ons-fab>
+            </v-ons-page>
+        </template>
+        <template id="plan">
+            <v-ons-page>
+                <v-ons-toolbar>
+                    <div class="left">
+                        <v-ons-back-button>Meal Plans</v-ons-back-button>
+                    </div>
+                    <div class="center">{{ plan.name }}</div>
+                </v-ons-toolbar>
+                <div class="content">
+                    <v-on-list>
+                        <v-ons-list-item>
+                            <v-ons-input placeholder="Meal Plan Name" v-model="plan.name" float/>
+                        </v-ons-list-item>
+                        <v-ons-list-item>
+                            <v-ons-input placeholder="Plan Length (days)" :value.sync="plan.days.length" type="number" v-on:change="adjust_number_days" float min="1"/>
+                        </v-ons-list-item>
+                    </v-on-list>
+                    <p style="text-align: center">
+                        <span v-for="(day, index) in plan.days" v-on:click="carousel_index = index">
+                            {{ carousel_index == index ? '\u25CF' : '\u25CB' }}
+                        </span>
+                    </p>
+                    <v-ons-carousel swipeable auto-scroll overscrollable item-width="100%" :index.sync="carousel_index" centered>
+                        <v-ons-carousel-item v-for="(day, index) in plan.days">
+                            <div>
+                                <v-ons-list>
+                                    <v-ons-list-item>
+                                        <h2>Day {{ index + 1 }}</h2>
+                                    </v-ons-list-item>
+                                    <foods :day="day" :day_index="index" meal="breakfast" title="Breakfast"></foods>
+                                    <foods :day="day" :day_index="index" meal="lunch" title="Lunch"></foods>
+                                    <foods :day="day" :day_index="index" meal="dinner" title="Dinner"></foods>
+                                    <foods :day="day" :day_index="index" meal="snacks" title="Snacks"></foods>
+                                    <v-ons-list-item>
+                                        <div class="left">
+                                            Total
+                                        </div>
+                                        <div class="right">
+                                            {{ format_amount(total_calories(index)) }} calories
+                                        </div>
+                                    </v-ons-list-item>
+                                </v-ons-list>
+                            </div>
+                        </v-ons-carousel-item>
+                    </v-ons-carousel>
+                    <p style="text-align: center">
+                        <span v-for="(day, index) in plan.days" v-on:click="carousel_index = index">
+                            {{ carousel_index == index ? '\u25CF' : '\u25CB' }}
+                        </span>
+                    </p>
+                    <v-ons-list>
+                        <v-ons-list-item expandable>
+                            Recipes Required, Leftovers
+                            <div class="expandable-content">
+                                <v-ons-list>
+                                    <v-ons-list-item v-for="(recipe_info) in recipe_info_list">
+                                        <div class="left">
+                                            {{ recipe_info.recipe.name }}
+                                        </div>
+                                        <div class="center padding-left">
+                                            cooked {{ recipe_info.count }} time(s)
+                                        </div>
+                                        <div class="right">
+                                            w/ {{ recipe_info.leftover_servings }} servings leftover
+                                        </div>
+                                    </v-ons-list-item>
+                                </v-ons-list>
+                            </div>
+                        </v-ons-list-item>
+                    </v-ons-list>
+                    <v-ons-list>
+                        <v-ons-list-item expandable>
+                            Average Daily Nutrition
+                            <div class="expandable-content">
+                                <v-ons-list>
+                                    <v-ons-list-item v-for="(nutrient, index) in nutrient_list">
+                                        <div class="left">
+                                            {{ nutrient }}
+                                        </div>
+                                        <div class="center padding-left">
+                                            {{ format_amount(daily_nutrients[nutrient]) }}{{ nutrient_units[nutrient] }}
+                                        </div>
+                                        <div class="right">
+                                            {{ format_amount(nutrient_percentage(daily_nutrients[nutrient], nutrient)) }}%
+                                        </div>
+                                    </v-ons-list-item>
+                                </v-ons-list>
+                            </div>
+                        </v-ons-list-item>
+                    </v-ons-list>
+                    <!-- TODO macronutrient breakdown -->
+                    <v-ons-button @click="save">Save</v-ons-button>
+                </div>
+            </v-ons-page>
+        </template>
+        <template id="foods">
+            <div>
+                <v-ons-list-header>{{ title }}</v-ons-list-header>
+                <v-ons-list-item v-for="(food, food_index) in day[meal]">
+                    <div class="left">
+                        {{ food.name }}
+                    </div>
+                    <div class="right">
+                        {{ format_amount(food.nutrients_per_serving.Energy) }} calories
+                        <div style="padding: 10px" @click.stop="remove_recipe(day_index, meal, food_index)"><v-ons-icon icon="md-delete"></v-ons-icon></div>
+                    </div>
+                </v-ons-list-item>
+                <v-ons-list-item>
+                    <v-ons-button @click="add_recipe(day_index, meal)">Add Recipe</v-ons-button>
+                </v-ons-list-item>
+            </div>
+        </template>
+        <template id="choose-recipe">
+            <v-ons-page class="choose-recipe">
+                <v-ons-toolbar>
+                    <div class="left">
+                        <v-ons-back-button>{{ plan.name }}</v-ons-back-button>
+                    </div>
+                    <div class="center">Add Recipe to Day {{ day }} - {{ meal }}</div>
+                </v-ons-toolbar>
+                <div class="content">
+                    <v-ons-list>
+                        <v-ons-list-header>Recipes</v-ons-list-header>
+                        <v-ons-list-item v-for="recipe in recipes" v-on:click="add_recipe(recipe._id)">
+                            {{ recipe.name }}
+                        </v-ons-list-item>
+                    </v-ons-list>
+                </div>
+            </v-ons-page>
+        </template>
+        <template id="groceries">
+            <v-ons-page>
+                <div class="content">
+                    <p class="text" v-if="list.length == 0">
+                        Nothing added to the grocery list yet. Use the button below to add items to the grocery list.
+                    </p>
+                    <v-ons-list>
+                        <v-ons-list-item v-for="(item, index) in list">
+                            <div class="left"><v-ons-switch v-model="item.checked" @change="save_item(item, $event)"></v-ons-switch></div>
+                            <div class="center">{{ item.name }}</div>
+                            <div class="right" @click.stop="remove_item(item)"><v-ons-icon icon="md-delete"></v-ons-icon></div>
+                        </v-ons-list-item>
+                    </v-ons-list>
+                    <div class="fab-margin"></div>
+                </div>
+                <v-ons-fab position="bottom right" v-on:click="add_items">
+                    <v-ons-icon icon="md-plus"/>
+                </v-ons-fab>
+            </v-ons-page>
+        </template>
+        <template id="add-grocery-items">
+            <v-ons-page class="choose-recipe">
+                <v-ons-toolbar>
+                    <div class="left">
+                        <v-ons-back-button>Groceries</v-ons-back-button>
+                    </div>
+                    <div class="center">Add Meals to Groceries</div>
+                </v-ons-toolbar>
+                <div class="content">
+                    <v-ons-list>
+                        <v-ons-list-header>Meal Plans</v-ons-list-header>
+                        <v-ons-list-item v-for="plan in plans" expandable>
+                            <div class="left"><v-ons-switch @click.stop @change="toggle_plan(plan, $event)" v-model="checked_plans" :value="plan.name"></v-ons-switch></div>
+                            <div class="center">{{ plan.name }}</div>
+                            <div class="expandable-content">
+                                <v-ons-list>
+                                    <v-ons-list-item v-for="(day, index) in plan.days" expandable>
+                                        <div class="left"><v-ons-switch @click.stop @change="toggle_day(plan, index, $event)" v-model="checked_days" :value="[plan.name, index]"></v-ons-switch></div>
+                                        <div class="center">Day {{ index + 1 }}</div>
+                                        <div class="expandable-content">
+                                            <v-ons-list>
+                                                <v-ons-list-item>
+                                                    <div class="left"><v-ons-switch v-model="checked_meals" :value="[plan.name, index, 'breakfast']"></v-ons-switch></div>
+                                                    <div class="center">Breakfast</div>
+                                                </v-ons-list-item>
+                                                <v-ons-list-item>
+                                                    <div class="left"><v-ons-switch v-model="checked_meals" :value="[plan.name, index, 'lunch']"></v-ons-switch></div>
+                                                    <div class="center">Lunch</div>
+                                                </v-ons-list-item>
+                                                <v-ons-list-item>
+                                                    <div class="left"><v-ons-switch v-model="checked_meals" :value="[plan.name, index, 'dinner']"></v-ons-switch></div>
+                                                    <div class="center">Dinner</div>
+                                                </v-ons-list-item>
+                                                <v-ons-list-item>
+                                                    <div class="left"><v-ons-switch v-model="checked_meals" :value="[plan.name, index, 'snacks']"></v-ons-switch></div>
+                                                    <div class="center">Snacks</div>
+                                                </v-ons-list-item>
+                                            </v-ons-list>
+                                        </div>
+                                    </v-ons-list-item>
+                                </v-ons-list>
+                            </div>
+                        </v-ons-list-item>
+                    </v-ons-list>
+                    <v-ons-button @click="add">Add</v-ons-button>
+                </div>
+            </v-ons-page>
+        </template>
+        <template id="configuration-page">
+            <v-ons-page id="configuration">
+                <v-ons-toolbar>
+                    <div class="left">
+                        <v-ons-back-button>Back</v-ons-back-button>
+                    </div>
+                    <div class="center">Configuration</div>
+                </v-ons-toolbar>
+                <div class="content">
+                    <v-ons-list>
+                        <v-ons-list-header>Syncing</v-ons-list-header>
+                        <v-ons-list-item>
+                            <div class="left">CouchDB Host</div>
+                            <div class="center"><v-ons-input v-model="config.couch_host"></v-ons-input></div>
+                        </v-ons-list-item>
+                        <v-ons-list-item>
+                            <div class="left">CouchDB Port</div>
+                            <div class="center"><v-ons-input v-model="config.couch_port"></v-ons-input></div>
+                        </v-ons-list-item>
+                        <v-ons-list-item>
+                            <div class="left">CouchDB Username</div>
+                            <div class="center"><v-ons-input v-model="config.couch_username"></v-ons-input></div>
+                        </v-ons-list-item>
+                        <v-ons-list-item>
+                            <div class="left">CouchDB Password</div>
+                            <div class="center"><v-ons-input type="password" v-model="config.couch_password"></v-ons-input></div>
+                        </v-ons-list-item>
+                        <v-ons-list-item>
+                            <div class="left">Sync Enabled</div>
+                            <div class="center"><v-ons-switch v-model="config.sync_enabled"></v-ons-switch></div>
+                        </v-ons-list-item>
+                    </v-ons-list>
+                    <v-ons-button @click="save_config()">Save Config</v-ons-button>
+                </div>
+            </v-ons-page>
+        </template>
+        <ons-page id="loading" class="loading">
+            <div class="background"></div>
+            <div class="content">
+                <ons-row vertical-align="center">
+                    <ons-col>
+                        <p style="text-align: center">
+                            <span class="message">Loading...</span>
+                            <br>
+                            <img class="app-icon" src="1F957.svg">
+                            <img class="app-icon" src="1F34A.svg">
+                            <img class="app-icon" src="1F336.svg">
+                            <img class="app-icon" src="1F373.svg">
+                        </p>
+                    </ons-col>
+                </ons-row>
+            </div>
+        </ons-page>
+        <template id="initializing">
+            <v-ons-page class="loading">
+                <div class="background"></div>
+                <div class="content">
+                    <v-ons-row vertical-align="center">
+                        <ons-col>
+                            <p style="text-align: center">
+                                <span class="message">{{ message }}</span>
+                                <br>
+                                <img class="app-icon" src="1F957.svg">
+                                <img class="app-icon" src="1F34A.svg">
+                                <img class="app-icon" src="1F336.svg">
+                                <img class="app-icon" src="1F373.svg">
+                            </p>
+                        </ons-col>
+                    </v-ons-row>
+                </div>
+            </v-ons-page>
+        </template>
+        <div id="app">
+        </div>
+        <script src="vue.min.js"></script>
+        <script src="vue-onsenui.min.js"></script>
+        <script src="pouchdb.min.js"></script>
+        <script src="pouchdb.find.min.js"></script>
+        <script src="pyodide.js"></script>
+    </body>
+</html>
