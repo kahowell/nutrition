@@ -173,7 +173,7 @@ class IngredientSearchStore(VueStore):
             disabled_categories = get_disabled_categories()
             selector = {
                 'keywords': {
-                    '$all': [keyword.lower() for keyword in self.state.query.split()]
+                    '$all': [keyword for keyword in self.state.query.split()]
                 },
             }
             if len(disabled_categories) > 0:
