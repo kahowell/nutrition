@@ -15,7 +15,7 @@ jobs:
         run: python3 -m pip install --user pipenv
 
       - name: Install deps
-        run: python3 -m pipenv install
+        run: python3 -m pipenv install --dev
 
       - name: Build
         run: python3 -m pipenv run python ./build.py
