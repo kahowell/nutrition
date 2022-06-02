@@ -5,96 +5,96 @@ pyodide_packages = [
 
 pyodideapp_www_files = [
     
-    './pyodide.js',
+    './1F336.svg',
     
-    './vue-onsenui.min.js',
+    './pyodide.asm.wasm',
     
-    './1F373_512.png',
+    './1F373.svg',
+    
+    './bootstrap.js',
+    
+    './plan.py',
+    
+    './index.html',
+    
+    './pouchdb.find.min.js',
+    
+    './onsen-css-components.min.css',
+    
+    './1F34A.svg',
+    
+    './sw.js',
+    
+    './fetchimport.py',
+    
+    './1F373_192.png',
     
     './recommendations.py',
+    
+    './vue.py',
+    
+    './groceries.py',
+    
+    './main.py',
+    
+    './store.py',
+    
+    './recipe.py',
+    
+    './config.py',
+    
+    './onsenui.min.css',
+    
+    './vue-onsenui.min.js',
     
     './packages.json',
     
     './pouchdb.min.js',
     
-    './onsenui.min.js',
-    
-    './store.py',
-    
-    './plan.py',
-    
-    './pyodide.asm.data',
-    
-    './pyodide.asm.data.js',
-    
-    './bootstrap.js',
-    
-    './fetchimport.py',
-    
-    './nutrition.webmanifest',
-    
-    './pyodide.asm.wasm',
-    
-    './1F957.svg',
-    
-    './main.py',
-    
-    './vue.py',
-    
-    './index.html',
-    
-    './1F336.svg',
-    
-    './pouchdb.find.min.js',
-    
-    './sw.js',
-    
-    './1F373_192.png',
-    
-    './onsenui.min.css',
-    
-    './config.py',
-    
-    './onsen-css-components.min.css',
+    './httpimport.py',
     
     './all_foods.json',
     
+    './1F373_512.png',
+    
     './pyodide.asm.js',
     
-    './1F34A.svg',
-    
-    './groceries.py',
-    
-    './httpimport.py',
+    './nutrition.webmanifest',
     
     './vue.min.js',
     
-    './recipe.py',
+    './pyodide.asm.data.js',
     
-    './1F373.svg',
+    './1F957.svg',
+    
+    './pyodide.asm.data',
+    
+    './pyodide.js',
+    
+    './onsenui.min.js',
+    
+    './ionicons/css/ionicons.min.css',
     
     './material-design-iconic-font/css/material-design-iconic-font.min.css',
-    
-    './material-design-iconic-font/fonts/Material-Design-Iconic-Font.ttf',
     
     './material-design-iconic-font/fonts/Material-Design-Iconic-Font.woff',
     
     './material-design-iconic-font/fonts/Material-Design-Iconic-Font.woff2',
     
-    './font_awesome/webfonts/fa-solid-900.woff2',
+    './material-design-iconic-font/fonts/Material-Design-Iconic-Font.ttf',
     
-    './font_awesome/webfonts/fa-brands-400.woff2',
+    './font_awesome/css/all.min.css',
+    
+    './font_awesome/css/v4-shims.min.css',
     
     './font_awesome/webfonts/fa-solid-900.ttf',
     
     './font_awesome/webfonts/fa-brands-400.woff',
     
+    './font_awesome/webfonts/fa-solid-900.woff2',
+    
     './font_awesome/webfonts/fa-solid-900.woff',
     
-    './font_awesome/css/v4-shims.min.css',
-    
-    './font_awesome/css/all.min.css',
-    
-    './ionicons/css/ionicons.min.css',
+    './font_awesome/webfonts/fa-brands-400.woff2',
     
 ];
